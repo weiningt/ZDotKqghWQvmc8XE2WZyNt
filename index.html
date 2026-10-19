@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <title>DFx Toggle Coverage OAuth Relay</title>
+  <style>
+    :root { color-scheme: light; --ink: #20272e; --muted: #535e69; --accent: #2563eb; --error: #ad283d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); background: linear-gradient(160deg, #fff, #f2f5f6); font-family: "Trebuchet MS", sans-serif; letter-spacing: 0; }
+    main { width: min(34rem, calc(100% - 3rem)); margin: 12vh auto 0; padding-top: 24px; border-top: 3px solid var(--accent); overflow-wrap: anywhere; }
+    h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.25; font-weight: 600; }
+    p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
+    body[data-state="error"] main { border-color: var(--error); }
+  </style>
+</head>
+<body>
+  <main aria-live="polite">
+    <h1 id="heading">Redirecting to DFx Toggle Coverage</h1>
+    <p id="message">Opening the dashboard callback destination...</p>
+    <noscript><p>JavaScript is required for this redirect.</p></noscript>
+  </main>
+  <script>
+    (() => {
+      const source = new URL(window.location.href);
+
+      function showError(message) {
+        document.body.dataset.state = 'error';
+        document.getElementById('heading').textContent = 'Redirect unavailable';
+        document.getElementById('message').textContent = message;
+      }
+
+      function buildDestination() {
+        const destinations = source.searchParams.getAll('redirecturl');
+        if (destinations.length > 1) {
+          throw new Error('Only one redirecturl parameter is allowed.');
+        }
+        if (destinations.length === 0 || destinations[0] === '') {
+          throw new Error('Missing redirect destination.');
+        }
+
+        let target;
+        try {
+          target = new URL(destinations[0]);
+        } catch {
+          throw new Error('The destination must be an absolute HTTP or HTTPS URL.');
+        }
+        if (!['http:', 'https:'].includes(target.protocol)) {
+          throw new Error('Only HTTP and HTTPS destinations are supported.');
+        }
+        if (target.username || target.password) {
+          throw new Error('URLs containing usernames or passwords are not allowed.');
+        }
+        if (target.origin === source.origin && target.pathname === source.pathname) {
+          throw new Error('The redirect cannot point back to this page.');
+        }
+
+        const forwarded = new URLSearchParams(source.search);
+        forwarded.delete('redirecturl');
+        for (const name of new Set(forwarded.keys())) {
+          target.searchParams.delete(name);
+        }
+        for (const [name, value] of forwarded) {
+          target.searchParams.append(name, value);
+        }
+        return target;
+      }
+
+      try {
+        window.history.replaceState(null, '', source.pathname);
+      } catch {}
+
+      let destination;
+      try {
+        destination = buildDestination();
+      } catch (error) {
+        showError(error.message);
+        return;
+      }
+      try {
+        window.location.replace(destination.href);
+      } catch {
+        showError('The browser could not open the destination.');
+      }
+    })();
+  </script>
+</body>
+</html>
