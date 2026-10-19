@@ -26,6 +26,7 @@
   <script>
     (() => {
       const source = new URL(window.location.href);
+      const fallbackDestination = 'http://sccc05073709.zsc16.intel.com:5190/dfx-toggle-coverage/api/auth/callback';
 
       function showError(message) {
         document.body.dataset.state = 'error';
@@ -38,13 +39,14 @@
         if (destinations.length > 1) {
           throw new Error('Only one redirecturl parameter is allowed.');
         }
-        if (destinations.length === 0 || destinations[0] === '') {
-          throw new Error('Missing redirect destination.');
-        }
+
+        const rawDestination = destinations.length === 0 || destinations[0] === ''
+          ? fallbackDestination
+          : destinations[0];
 
         let target;
         try {
-          target = new URL(destinations[0]);
+          target = new URL(rawDestination);
         } catch {
           throw new Error('The destination must be an absolute HTTP or HTTPS URL.');
         }
